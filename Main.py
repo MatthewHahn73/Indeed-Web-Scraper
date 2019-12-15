@@ -1,9 +1,9 @@
-#TODO: Write some code to allow program to run via command line; Include help menu, commands, etc
-#TODO: Script command to allow user to pass links via command line 
-#TODO: Script command to allow option to output results to .csv files 
+#TODO: Write some code to add the option to send data via text (Add subroutine, arguments, etc)
 
 import re
+import csv
 import requests
+import argparse
 from bs4 import BeautifulSoup
 
 # Scraping useful data
@@ -12,7 +12,7 @@ def Scrap(url):
 		r = requests.get(url)
 		soup = BeautifulSoup(r.content, "html.parser")
 	except Exception as e:
-		print(e)
+		print("Error: " + e)
 	jobs = []
 	for div in soup.find_all(name="div", attrs={"class":"row"}):
 		tempJob = []
@@ -55,13 +55,38 @@ def Vet(jobList):
 	return jobList
 		
 #Main method
-if __name__ == "__main__":
+def main(args):
 	totalFound = []
 	for a in range(0,3):
-		totalFound.append(Scrap("https://www.indeed.com/"
-			"jobs?q=Programmer&l=Dallas%2C+TX&"
-				"limit=30&radius=50&ts=1575602331419&pts="
-					"1575374158413&rq=1&rsIdx=0&fromage=last&newcount=291"))
+		totalFound.append(Scrap(args.url))
 	for b in range(0,len(totalFound),1):
 		totalFound[b] = [tuple(lst) for lst in totalFound[b]]
-	print(*sorted(set(totalFound[0]) | set(totalFound[1]) | set(totalFound[2])), sep = "\n")
+	finalData = sorted(set(totalFound[0]) | set(totalFound[1]) | set(totalFound[2]))
+	if args.csv:
+		with open("jobOpenings.csv", "w", newline='') as csvFile:
+			write = csv.writer(csvFile)
+			for x in range(0, len(finalData)):
+				write.writerow([finalData[x][0], 
+								'=HYPERLINK("' + finalData[x][1] + '","Application Link")',
+								finalData[x][2],
+								finalData[x][3]])
+			csvFile.close()
+	if args.txt:
+		with open("jobOpenings.txt", "w") as txtFile:
+			for x in range(0, len(finalData)):
+				txtFile.write("Title: " + finalData[x][0] + "\n" + 
+							  "Link: " + finalData[x][1] + "\n" + 
+							  "Company: " + finalData[x][2] + "\n" + 
+						      "Date Published: " + finalData[x][3] + "\n\n")
+	if not args.csv and not args.txt:
+		print(*finalData, sep="\n")
+
+#Reads in arguments
+if __name__ == "__main__":
+	par = argparse.ArgumentParser(description="Indeed Web Scraper v0.2")
+	par.add_argument("-csv", help="adds info to a local .csv file",
+						action="store_true")
+	par.add_argument("-txt", help="adds info to a local .txt file",
+						action="store_true")
+	par.add_argument("url", help="url argument for web scraper")
+	main(par.parse_args())
