@@ -1,18 +1,16 @@
 #TODO: Write some code to allow program to run via command line; Include help menu, commands, etc
 #TODO: Script command to allow user to pass links via command line 
 #TODO: Script command to allow option to output results to .csv files 
-#TODO: optional: Revert back to using previous method for parsing data from webpage
 
 import re
+import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
 
 # Scraping useful data
 def Scrap(url):
 	try:
-		driver = webdriver.Chrome()
-		driver.get(url)
-		soup = BeautifulSoup(driver.page_source, "html.parser")
+		r = requests.get(url)
+		soup = BeautifulSoup(r.content, "html.parser")
 	except Exception as e:
 		print(e)
 	jobs = []
@@ -28,7 +26,7 @@ def Scrap(url):
 		for d in div.find_all(class_="location accessible-contrast-color-location"): #Location
 			tempJob.append(d.text.strip())
 		jobs.append(tempJob)
-	driver.close()
+	r.close()
 	return Vet(jobs)
 
 #Vet the list to narrow it down to more reasonable canidates
@@ -45,7 +43,7 @@ def Vet(jobList):
 	newList.clear()
 	iterator = 0
 	for eachDate in [a[3] for a in jobList]: #Narrows based on time job posted
-		if eachDate.strip() == "Today":
+		if eachDate.strip() == "Today" or eachDate.strip() == "Just posted":
 			newList.append(jobList[iterator])
 		else:
 			tempInt = int(re.sub('[^0-9]','', eachDate))
