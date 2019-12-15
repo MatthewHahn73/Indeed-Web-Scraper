@@ -1,8 +1,9 @@
-#TODO: Write some code to autorun this script
-#TODO: Potential bug: Scraping yeilds significantly varying results (Related to vetting process?)
+#TODO: Write some code to allow program to run via command line; Include help menu, commands, etc
+#TODO: Script command to allow user to pass links via command line 
+#TODO: Script command to allow option to output results to .csv files 
+#TODO: optional: Revert back to using previous method for parsing data from webpage
 
 import re
-import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
@@ -12,7 +13,6 @@ def Scrap(url):
 		driver = webdriver.Chrome()
 		driver.get(url)
 		soup = BeautifulSoup(driver.page_source, "html.parser")
-		time.sleep(3)
 	except Exception as e:
 		print(e)
 	jobs = []
@@ -29,7 +29,7 @@ def Scrap(url):
 			tempJob.append(d.text.strip())
 		jobs.append(tempJob)
 	driver.close()
-	return jobs
+	return Vet(jobs)
 
 #Vet the list to narrow it down to more reasonable canidates
 def Vet(jobList):
@@ -58,8 +58,12 @@ def Vet(jobList):
 		
 #Main method
 if __name__ == "__main__":
-	vettedList = Vet(Scrap("https://www.indeed.com/"
+	totalFound = []
+	for a in range(0,3):
+		totalFound.append(Scrap("https://www.indeed.com/"
 			"jobs?q=Programmer&l=Dallas%2C+TX&"
 				"limit=30&radius=50&ts=1575602331419&pts="
 					"1575374158413&rq=1&rsIdx=0&fromage=last&newcount=291"))
-	print(*vettedList, sep = "\n")
+	for b in range(0,len(totalFound),1):
+		totalFound[b] = [tuple(lst) for lst in totalFound[b]]
+	print(*sorted(set(totalFound[0]) | set(totalFound[1]) | set(totalFound[2])), sep = "\n")
